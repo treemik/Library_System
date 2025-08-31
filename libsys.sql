@@ -6,7 +6,7 @@ pub_year INTEGER,
 isbn TEXT UNIQUE,
 created_at TEXT,
 updated_at TEXT
-)
+);
 
 CREATE TABLE IF NOT EXISTS members (
 id INTEGER PRIMARY KEY,
