@@ -1,41 +1,15 @@
+import helper_functions
 import sqlite3
+import argparse
 
-# inits the database
-def init_db():
-    conn = sqlite3.connect('library.db')
-    c = conn.cursor()
-    c.execute('PRAGMA foreign_keys = ON;')
-    c.execute('PRAGMA journal_mode = WAL;')
-    with open('libsys.sql') as f:
-        data = f.read()
-        c.executescript(data)
-    c.execute('PRAGMA user_version = 1;')
-    conn.commit()
-    conn.close()
-
-#connects to the database
-class DatabaseContextManager:
-
-    def __init__(self, db_name):
-        self.db_name = db_name
-        self.conn = None
-
-    def __enter__(self):
-        self.conn = sqlite3.connect(self.db_name)
-        c = self.conn.cursor()
-        c.execute('PRAGMA foreign_keys = ON;')
-        c.execute('PRAGMA journal_mode = WAL;')
-        c.execute('PRAGMA synchronous = NORMAL;')
-        return self.conn
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.conn:
-            if exc_type is None:
-                self.conn.commit()
-            else:
-                self.conn.rollback()
-            self.conn.close()
-
-
-
+#set up parser
+parser = argparse.ArgumentParser(description="A cli library system that adds books tracks loans and members")
+subparsers = parser.add_subparsers(dest="command")
+subparsers.required = True
+# add subparser add book
+add_parser = subparsers.add_parser("add_book", help="Add a book track")
+add_parser.add_argument("-t","--title",required=True, help="The title of the book")
+add_parser.add_argument("-a","--author",required=True, help="The author of the book")
+add_parser.add_argument("-p","--published",help="The published date of the book")
+add_parser.add_argument("--isbn", help="The ISBN of the book")
 
