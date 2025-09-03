@@ -16,6 +16,14 @@ add_parser.add_argument("--isbn", help="The ISBN of the book")
 add_parser=subparsers.add_parser("add_author", help="Add an author")
 add_parser.add_argument("-f","--first",required=True, help="The first name of the author")
 add_parser.add_argument("-l","--last",required=True, help="The last name of the author")
+# add subparser add members
+add_parser=subparsers.add_parser("add_member", help="Add a member")
+add_parser.add_argument("-f","--first",required=True,help="Members first name")
+add_parser.add_argument("-l","--last",required=True,help="Members last name")
+add_parser.add_argument("-e","--email",required=True,help="The email address of the member")
+add_parser.add_argument("-p","--phone",help="The phone number of the member")
+
+
 
 
 
