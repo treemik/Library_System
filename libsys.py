@@ -1,4 +1,5 @@
 from helper_functions import init_db, DatabaseContextManager
+from services import add_book
 from datetime import datetime
 import sqlite3
 import argparse
@@ -10,7 +11,7 @@ subparsers.required = True
 # add subparser add book
 add_parser = subparsers.add_parser("add_book", help="Add a book track")
 add_parser.add_argument("-t","--title",required=True, help="The title of the book")
-add_parser.add_argument("-a","--author",required=True, help="The author of the book")
+add_parser.add_argument("-a","--author",required=True, action="append", help="The author of the book")
 add_parser.add_argument("-p","--published",help="The published date of the book")
 add_parser.add_argument("--isbn", help="The ISBN of the book")
 # add subparser add author
@@ -30,9 +31,7 @@ init_db()
 
 if args.command=="add_book":
     with DatabaseContextManager("library.db") as conn:
-        cursor = conn.cursor()
-        created_at=datetime.now().strftime("%Y-%m-%d")
-        normalized_name=" ".join(args.author.strip().split()).lower()
+
         if not args.published:
             pub_year=None
         else:
@@ -41,21 +40,12 @@ if args.command=="add_book":
             isbn=None
         else:
             isbn=args.isbn
-        cursor.execute(
-            "INSERT INTO titles (title,pub_year,isbn,created_at)VALUES(?,?,?,?)",
-            (args.title,pub_year,isbn,created_at)
-        )
-        tit_id=cursor.lastrowid
-        cursor.execute(
-            "INSERT INTO authors(full_name,normalized_name)VALUES(?,?) ON CONFLICT (normalized_name) DO UPDATE SET full_name=excluded.full_name",
-            (args.author,normalized_name)
-        )
-        aut_id=cursor.execute("SELECT id FROM authors WHERE normalized_name=?",(normalized_name,)).fetchone()[0]
+        title = args.title
+        author = args.author
 
-        cursor.execute(
-            "INSERT INTO title_authors(title_id,author_id,author_order)VALUES(?,?,?)",
-            (tit_id,aut_id,1)
-        )
+        add_book(conn,title,author,pub_year,isbn)
+
+
 
 
 
