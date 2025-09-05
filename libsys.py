@@ -41,9 +41,9 @@ if args.command=="add_book":
         else:
             isbn=args.isbn
         title = args.title
-        author = args.author
+        authors = args.author
 
-        add_book(conn,title,author,pub_year,isbn)
+        add_book(conn,title,authors,pub_year,isbn)
 
 
 

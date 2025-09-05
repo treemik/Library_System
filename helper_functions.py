@@ -36,6 +36,20 @@ class DatabaseContextManager:
                 self.conn.rollback()
             self.conn.close()
 
+def normalize_and_dedupe(authors: list[str]) -> list[tuple[str, str]]:
+    seen = set()
+    deduped = []
+    for author in authors:
+        author = author.strip()
+        normalized_author =" ".join(author.split()).lower()
+        display_and_normalized=(author, normalized_author)
+        if normalized_author not in seen:
+            seen.add(normalized_author)
+            deduped.append(display_and_normalized)
+        else:
+            continue
+    return deduped
+
 
 
 
