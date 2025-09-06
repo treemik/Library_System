@@ -22,3 +22,17 @@ def add_book(conn,*,title,authors,pub_year,isbn):
             (tit_id, aut_id, order)
         )
     return tit_id
+def add_author(conn,*,first,last):
+    cursor = conn.cursor()
+    full_name = " ".join([first,last])
+    pair = normalize_and_dedupe([full_name])
+    display, normalized = pair[0]
+    cursor.execute(
+        "INSERT INTO authors(full_name,normalized_name)VALUES(?,?) ON CONFLICT (normalized_name) DO UPDATE SET full_name=excluded.full_name",
+        (display, normalized)
+    )
+    row = cursor.execute(
+        "SELECT id, full_name FROM authors WHERE normalized_name=?",
+        (normalized,)
+    ).fetchone()
+    return row
