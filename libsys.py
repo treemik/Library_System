@@ -1,20 +1,11 @@
-from helper_functions import init_db, DatabaseContextManager
+from helper_functions import init_db, DatabaseContextManager, published_type
 from services import add_book
 import re
 from datetime import datetime
 
+
 import argparse
-#year regex
-year_re=re.compile(r"^\s*(\d{4})(?:-(\d{2})(?:-\d{2})?)?\s*$")
-def published_type(s: str)->int:
-    match = year_re.match(s)
-    if not match:
-        raise argparse.ArgumentTypeError(f"{s} is not a valid date please enter a vaild date (YYYY-MM-DD OR YYYY-MM OR YYYY)")
-    year = int(match.group(1))
-    now = int(datetime.now().year)
-    if not 1400 <= year <= now+1:
-        raise argparse.ArgumentTypeError(f"{year} is not a valid year")
-    return year
+
 
 
 #set up parser
