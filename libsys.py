@@ -1,11 +1,7 @@
-from helper_functions import init_db, DatabaseContextManager, published_type
+#import required library's
+from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type
 from services import add_book
-import re
-from datetime import datetime
-
-
 import argparse
-
 
 
 #set up parser
@@ -17,7 +13,7 @@ add_parser = subparsers.add_parser("add_book", help="Add a book track")
 add_parser.add_argument("-t","--title",required=True, help="The title of the book")
 add_parser.add_argument("-a","--author",required=True, action="append", help="The author of the book")
 add_parser.add_argument("-p","--published",type=published_type,help="The published date of the book")
-add_parser.add_argument("--isbn", help="The ISBN of the book")
+add_parser.add_argument("--isbn",type= isbn_type,help="The ISBN of the book")
 # add subparser add author
 add_parser=subparsers.add_parser("add_author", help="Add an author")
 add_parser.add_argument("-f","--first",required=True, help="The first name of the author")
@@ -36,17 +32,13 @@ init_db()
 if args.command=="add_book":
     with DatabaseContextManager("library.db") as conn:
 
-        if not args.published:
-            pub_year=None
-        else:
-            pub_year=(args.published)
         if not args.isbn:
             isbn=None
         else:
             isbn=args.isbn
         title = args.title
         authors = args.author
-
+        pub_year = args.published
         add_book(conn,title=title,authors=authors,pub_year=pub_year,isbn=isbn)
 
 

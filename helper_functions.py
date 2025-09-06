@@ -64,4 +64,11 @@ def published_type(s: str)->int:
         raise argparse.ArgumentTypeError(f"{year} is not a valid year")
     return year
 
+def isbn_type(s:str)->str:
+    cleaned_s=s.strip().replace('-','').replace(' ','')
+    if len(cleaned_s)in(10,13):
+        return cleaned_s
+    else:
+        raise argparse.ArgumentTypeError('Invalid ISBN')
+
 
