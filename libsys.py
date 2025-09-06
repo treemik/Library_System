@@ -1,5 +1,5 @@
 #import required library's
-from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type
+from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, normalize_and_dedupe
 from services import add_book
 import argparse
 
@@ -31,15 +31,26 @@ init_db()
 #handle add book
 if args.command=="add_book":
     with DatabaseContextManager("library.db") as conn:
-
-        if not args.isbn:
-            isbn=None
-        else:
-            isbn=args.isbn
+        isbn = args.isbn
         title = args.title
         authors = args.author
         pub_year = args.published
         add_book(conn,title=title,authors=authors,pub_year=pub_year,isbn=isbn)
+
+#handle add author
+elif args.command=="add_author":
+    with DatabaseContextManager("library.db") as conn:
+        cursor=conn.cursor()
+        full_name=" ".join([args.first.strip(), args.last.strip()])
+        pair=normalize_and_dedupe([full_name])
+        display,normalized=pair[0]
+        cursor.execute(
+            "INSERT INTO authors(full_name,normalized_name)VALUES(?,?) ON CONFLICT (normalized_name) DO UPDATE SET full_name=excluded.full_name",
+            (display, normalized)
+        )
+        aut_id = cursor.execute("SELECT id FROM authors WHERE normalized_name=?", (normalized,)).fetchone()[0]
+
+
 
 
 
