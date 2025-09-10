@@ -1,4 +1,6 @@
 from datetime import datetime
+from sqlite3 import IntegrityError
+
 from helper_functions import normalize_and_dedupe
 
 def add_book(conn,*,title,authors,pub_year,isbn):
@@ -10,6 +12,11 @@ def add_book(conn,*,title,authors,pub_year,isbn):
         (title, pub_year, isbn, created_at)
     )
     tit_id = cursor.lastrowid
+
+    book_title= cursor.execute(
+        "SELECT title FROM titles WHERE id=?",
+        tit_id
+    )
     for order, (display, normalized) in enumerate(pairs, start=1):
         cursor.execute(
             "INSERT INTO authors(full_name,normalized_name)VALUES(?,?) ON CONFLICT (normalized_name) DO UPDATE SET full_name=excluded.full_name",
@@ -21,7 +28,9 @@ def add_book(conn,*,title,authors,pub_year,isbn):
             "INSERT OR IGNORE INTO title_authors(title_id,author_id,author_order)VALUES(?,?,?)",
             (tit_id, aut_id, order)
         )
-    return tit_id
+    title_and_author = [book_title,display ]
+    return title_and_author
+
 def add_author(conn,*,first,last):
     cursor = conn.cursor()
     full_name = " ".join([first,last])
@@ -33,6 +42,20 @@ def add_author(conn,*,first,last):
     )
     row = cursor.execute(
         "SELECT id, full_name FROM authors WHERE normalized_name=?",
-        (normalized,)
+        normalized
     ).fetchone()
+
     return row
+
+def add_member(conn,*,first,last,email,phone):
+    cursor = conn.cursor()
+    full_name = " ".join([first,last])
+    try:
+        cursor.execute(
+            "INSERT INTO members (full_name,email_address,phone_number) VALUES(?,?,?)",
+            (full_name,email,phone)
+        )
+        member_id=cursor.lastrowid
+        return member_id,full_name
+    except IntegrityError as e:
+        return None

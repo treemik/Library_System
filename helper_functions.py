@@ -64,6 +64,23 @@ def published_type(s: str)->int:
         raise argparse.ArgumentTypeError(f"{year} is not a valid year")
     return year
 
+#e-mail regex
+email_re=re.compile(r"^[^@\s]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+def email_type(s: str)->str:
+    match = email_re.match(s)
+    if not match:
+        raise argparse.ArgumentTypeError(f"{s} is not a valid email")
+    return s.strip().lower()
+
+#phone number regex
+phone_re=re.compile(r"^0[0-9]{9}$")
+def phone_type(s: str)->str:
+    s=s.strip().replace('-','').replace(' ','')
+    match = phone_re.match(s)
+    if not match:
+        raise argparse.ArgumentTypeError(f"{s} is not a valid phone")
+    return s
+
 def isbn_type(s:str)->str:
     cleaned_s=s.strip().replace('-','').replace(' ','')
     if len(cleaned_s)in(10,13):
