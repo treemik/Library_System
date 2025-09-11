@@ -1,6 +1,6 @@
 #import required library's
 from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, email_type, phone_type
-from services import add_book, add_author, add_member
+from services import add_book, add_author, add_member, search
 import argparse
 
 
@@ -24,6 +24,9 @@ add_parser.add_argument("-f","--first",required=True,help="Members first name")
 add_parser.add_argument("-l","--last",required=True,help="Members last name")
 add_parser.add_argument("-e","--email",type=email_type,required=True,help="The email address of the member")
 add_parser.add_argument("-p","--phone",type=phone_type,help="The phone number of the member")
+# add subparser search
+add_parser=subparsers.add_parser("search", help="Search for a title")
+add_parser.add_argument("-t","--title",required=True,help="The title of the book")
 
 args = parser.parse_args()
 #Initilize the database
@@ -35,8 +38,8 @@ if args.command=="add_book":
         title = args.title
         authors = args.author
         pub_year = args.published
-        book_title,author=add_book(conn,title=title,authors=authors,pub_year=pub_year,isbn=isbn)
-        print (f"{book_title} by {author} was added")
+        book_id,book_title=add_book(conn,title=title,authors=authors,pub_year=pub_year,isbn=isbn)
+        print (f"{book_title} was added with id {book_id}")
 
 #handle add author
 elif args.command=="add_author":
@@ -59,6 +62,25 @@ elif args.command=="add_member":
         else:
             member_id,full_name=result
             print(f'Member {full_name} was added with the id {member_id}')
+
+elif args.command=="search":
+    with DatabaseContextManager("library.db") as conn:
+        title=args.title.strip().lower()
+        results=search(conn,title=title)
+        if results is None:
+            print (f"Title {title} was not found")
+        else:
+            print (f"\nResults for the title {title} \n")
+            print ("-"*47)
+            print (f"{'ID':<4} | {'Title':<16} | {'Available':<9} | {'Total':<9}")
+            print ("-"*47)
+            for result in results:
+                book_id=result["id"]
+                book_title=result["title"]
+                available=result["available"]
+                total=result["total"]
+                print (f"{book_id:<4} | {book_title[:15]:<16} | {available:<9} | {total:<9}")
+
 
 
 

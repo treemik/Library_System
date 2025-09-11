@@ -23,7 +23,7 @@ PRIMARY KEY (title_id,author_id)
 );
 
 CREATE TABLE IF NOT EXISTS members (
-id INTEGER PRIMARY KEY,
+id INTEGER PRIMARY KEY,I
 full_name TEXT NOT NULL,
 email_address TEXT NOT NULL UNIQUE,
 phone_number TEXT,

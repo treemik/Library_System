@@ -16,7 +16,7 @@ def add_book(conn,*,title,authors,pub_year,isbn):
     book_title= cursor.execute(
         "SELECT title FROM titles WHERE id=?",
         tit_id
-    )
+    ).fetchone()[0]
     for order, (display, normalized) in enumerate(pairs, start=1):
         cursor.execute(
             "INSERT INTO authors(full_name,normalized_name)VALUES(?,?) ON CONFLICT (normalized_name) DO UPDATE SET full_name=excluded.full_name",
@@ -28,7 +28,7 @@ def add_book(conn,*,title,authors,pub_year,isbn):
             "INSERT OR IGNORE INTO title_authors(title_id,author_id,author_order)VALUES(?,?,?)",
             (tit_id, aut_id, order)
         )
-    title_and_author = [book_title,display ]
+    title_and_author = [tit_id,book_title]
     return title_and_author
 
 def add_author(conn,*,first,last):
@@ -59,3 +59,29 @@ def add_member(conn,*,first,last,email,phone):
         return member_id,full_name
     except IntegrityError as e:
         return None
+
+def search(conn,*,title):
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id,title FROM titles WHERE LOWER(title) LIKE LOWER(?)",
+        ('%'+title+'%',)
+    )
+    row = cursor.fetchall()
+    if not row:
+        return None
+    results=[]
+    for book_id, book_title in row:
+        cursor.execute(
+            'SELECT id, status FROM copies WHERE title_id=?',
+            (book_id,)
+        )
+        current=cursor.fetchall()
+        total=0
+        available=0
+        for copies_id, copies_status in current:
+            total+=1
+            if copies_status=="available":
+                available+=1
+
+        results.append({"id":book_id, "title":book_title, "available":available, "total":total})
+    return results
