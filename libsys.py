@@ -1,6 +1,6 @@
 #import required library's
 from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, email_type, phone_type
-from services import add_book, add_author, add_member, search
+from services import add_book, add_author, add_member, search_book, search_member
 import argparse
 
 
@@ -24,9 +24,16 @@ add_parser.add_argument("-f","--first",required=True,help="Members first name")
 add_parser.add_argument("-l","--last",required=True,help="Members last name")
 add_parser.add_argument("-e","--email",type=email_type,required=True,help="The email address of the member")
 add_parser.add_argument("-p","--phone",type=phone_type,help="The phone number of the member")
-# add subparser search
-add_parser=subparsers.add_parser("search", help="Search for a title")
+# add subparser search book
+add_parser=subparsers.add_parser("search_book", help="Search for a title")
 add_parser.add_argument("-t","--title",required=True,help="The title of the book")
+# add subparser search member
+add_parser=subparsers.add_parser("search_member", help="Search for a member")
+add_parser.add_argument("-e","--email",type=email_type,help="search by email")
+add_parser.add_argument("-p","--phone",type=phone_type,help="search by phone")
+add_parser.add_argument("-n","--name",help="search by name")
+
+
 
 args = parser.parse_args()
 #Initilize the database
@@ -63,10 +70,10 @@ elif args.command=="add_member":
             member_id,full_name=result
             print(f'Member {full_name} was added with the id {member_id}')
 
-elif args.command=="search":
+elif args.command=="search_book":
     with DatabaseContextManager("library.db") as conn:
         title=args.title.strip().lower()
-        results=search(conn,title=title)
+        results=search_book(conn,title=title)
         if results is None:
             print (f"Title {title} was not found")
         else:
@@ -80,6 +87,35 @@ elif args.command=="search":
                 available=result["available"]
                 total=result["total"]
                 print (f"{book_id:<4} | {book_title[:15]:<16} | {available:<9} | {total:<9}")
+
+elif args.command=="search_member":
+    with DatabaseContextManager("library.db") as conn:
+        name=args.name.strip().lower()
+        results=search_member(conn,email=args.email,name=name,phone=args.phone)
+        search_params=[]
+        if args.email:
+            search_params.append(args.email)
+        if args.phone:
+            search_params.append(args.phone)
+        if args.name:
+            search_params.append(args.name)
+        search_string=" ".join(search_params)
+
+        if not results:
+            print (f"No results found for {search_string}")
+        else:
+            print (f"\n Results for {search_string} \n")
+            print ("-"*65)
+            print (f"{'ID':<4} | {'Member name':<16} | {'Member Phone':<13} | {'Member Email'}")
+            print ("-"*65)
+            for result in results:
+                member_id=result["id"]
+                member_name=result["name"]
+                member_phone=result["phone"]
+                member_email=result["email"]
+                print (f"{member_id:<4} | {member_name[:15]:<16} | {member_phone:<13} | {member_email}")
+
+
 
 
 

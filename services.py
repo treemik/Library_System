@@ -60,10 +60,10 @@ def add_member(conn,*,first,last,email,phone):
     except IntegrityError as e:
         return None
 
-def search(conn,*,title):
+def search_book(conn,*,title):
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id,title FROM titles WHERE LOWER(title) LIKE LOWER(?)",
+        "SELECT id,title FROM titles WHERE title LIKE ? COLLATE NOCASE",
         ('%'+title+'%',)
     )
     row = cursor.fetchall()
@@ -84,4 +84,44 @@ def search(conn,*,title):
                 available+=1
 
         results.append({"id":book_id, "title":book_title, "available":available, "total":total})
+    return results
+
+def search_member(conn,*,email,phone,name):
+    cursor = conn.cursor()
+    results=[]
+    seen =set()
+    if email:
+        cursor.execute(
+            "SELECT id, full_name, phone_number, email_address, is_active FROM members WHERE email_address=? COLLATE NOCASE AND is_active=1 LIMIT 1",
+            (email,)
+        )
+        row_email = cursor.fetchall()
+        if row_email:
+            for member_id, member_name, member_phone, member_email, active in row_email:
+                results.append({'id':member_id,'name':member_name,'phone':member_phone,'email':member_email,'active':active})
+            return results
+
+
+    if phone:
+        cursor.execute(
+            "SELECT id, full_name, phone_number, email_address, is_active FROM members WHERE phone_number=? AND is_active=1 ORDER BY full_name ASC LIMIT 25",
+            (phone,)
+        )
+        row_phone_number = cursor.fetchall()
+        for member_id, member_name, member_phone, member_email, active in row_phone_number:
+            if member_id not in seen:
+                seen.add(member_id)
+                results.append({'id': member_id, 'name': member_name, 'phone': member_phone, 'email': member_email, 'active': active})
+
+    if name:
+        cursor.execute(
+            "SELECT id, full_name, phone_number, email_address, is_active FROM members WHERE full_name LIKE ? COLLATE NOCASE AND is_active=1 ORDER BY full_name ASC LIMIT 25",
+            ("%"+name+"%",)
+        )
+        row_name = cursor.fetchall()
+        for member_id, member_name, member_phone, member_email, active in row_name:
+            if member_id not in seen:
+                seen.add(member_id)
+                results.append({'id': member_id, 'name': member_name, 'phone': member_phone, 'email': member_email, 'active': active})
+
     return results
