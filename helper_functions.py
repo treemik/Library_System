@@ -88,4 +88,12 @@ def isbn_type(s:str)->str:
     else:
         raise argparse.ArgumentTypeError('Invalid ISBN')
 
+def quantity_type(s:str)->int:
+    try:
+        value=int(s)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{s} is not a valid quantity, quantity must be an integer")
+    if value<=0:
+        raise argparse.ArgumentTypeError('Invalid quantity, must be greater than 0')
+    return value
 

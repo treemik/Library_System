@@ -1,6 +1,6 @@
 #import required library's
-from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, email_type, phone_type
-from services import add_book, add_author, add_member, search_book, search_member
+from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, email_type, phone_type, quantity_type
+from services import add_book, add_author, add_member, search_book, search_member, add_copy
 import argparse
 
 
@@ -32,6 +32,10 @@ add_parser=subparsers.add_parser("search_member", help="Search for a member")
 add_parser.add_argument("-e","--email",type=email_type,help="search by email")
 add_parser.add_argument("-p","--phone",type=phone_type,help="search by phone")
 add_parser.add_argument("-n","--name",help="search by name")
+# Add subparser add copy
+add_parser=subparsers.add_parser("add_copy", help="add a copy")
+add_parser.add_argument('--id',type=int,required=True,help="The id of the copy")
+add_parser.add_argument('-q','--quantity',type=quantity_type,help="The quantity of the copies",default=1)
 
 
 
@@ -115,6 +119,15 @@ elif args.command=="search_member":
                 member_email=result["email"]
                 print (f"{member_id:<4} | {member_name[:15]:<16} | {member_phone:<13} | {member_email}")
 
+elif args.command=="add_copy":
+    with DatabaseContextManager("library.db") as conn:
+        title_id,quantity=add_copy(conn,book_id=args.id,quantity=args.quantity)
+        if quantity== 0:
+            print (f"\nNo book found with the ID:{title_id}\n")
+        elif quantity==1:
+            print(f"\n{quantity} copy of the book with ID:{book_id} was added")
+        else:
+            print(f"\n{quantity} copies of the book with ID:{title_id} were added")
 
 
 

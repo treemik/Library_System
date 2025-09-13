@@ -125,3 +125,22 @@ def search_member(conn,*,email,phone,name):
                 results.append({'id': member_id, 'name': member_name, 'phone': member_phone, 'email': member_email, 'active': active})
 
     return results
+
+
+def add_copy(conn,*,book_id,quantity):
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id FROM titles WHERE id = ?",
+        (book_id,)
+    )
+    row = cursor.fetchone()
+    if row is None:
+        return book_id,0
+
+    else:
+        title_id = row[0]
+        cursor.executemany(
+            "INSERT INTO copies (title_id) values(?)",
+            [(title_id,)] * quantity,
+        )
+        return title_id,quantity
