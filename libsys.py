@@ -1,6 +1,6 @@
 #import required library's
 from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, email_type, phone_type, quantity_type
-from services import add_book, add_author, add_member, search_book, search_member, add_copy
+from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book
 import argparse
 
 
@@ -36,6 +36,11 @@ add_parser.add_argument("-n","--name",help="search by name")
 add_parser=subparsers.add_parser("add_copy", help="add a copy")
 add_parser.add_argument('--id',type=int,required=True,help="The id of the copy")
 add_parser.add_argument('-q','--quantity',type=quantity_type,help="The quantity of the copies",default=1)
+# Add subparser loan
+add_parser=subparsers.add_parser("loan", help="loan a book")
+add_parser.add_argument('--id',type=int,required=True,help="The id of the book")
+add_parser.add_argument('--member_id',type=int,required=True,help="The id of the member")
+add_parser.add_argument('-d','--days', type=int,help='length of the loan in days' ,default=14)
 
 
 
@@ -125,9 +130,32 @@ elif args.command=="add_copy":
         if quantity== 0:
             print (f"\nNo book found with the ID:{title_id}\n")
         elif quantity==1:
-            print(f"\n{quantity} copy of the book with ID:{book_id} was added")
+            print(f"\n{quantity} copy of the book with ID:{title_id} was added\n")
         else:
-            print(f"\n{quantity} copies of the book with ID:{title_id} were added")
+            print(f"\n{quantity} copies of the book with ID:{title_id} were added\n")
+
+elif args.command=="loan":
+    with DatabaseContextManager("library.db") as conn:
+        results=loan_book(conn,title_id=args.id,member_id=args.member_id,days=args.days)
+        if not results['ok']:
+            err=results['error']
+            if err=="NO_SUCH_TITLE":
+                print(f"No book found with the ID:{args.id}")
+            elif err=="NO_SUCH_MEMBER":
+                print(f"No member found with the ID:{args.member_id}")
+            elif err=='NO_COPIES_AVAILABLE':
+                print(f"No copies available for the book with ID:{args.id}")
+            elif err=='RACE_LOST':
+                print(f"Copy was claimed by another loan. Try again")
+            elif err=='DB_ERROR':
+                print(f"Database error. Try again")
+
+        else:
+            loan = results['data']
+            print(f"\n Book {loan['title_id']} was loaned to member {loan['member_id']} loan id: {loan["loan_id"]}\n loaned on {loan['loaned_at']} due {loan['due']} ")
+
+
+
 
 
 

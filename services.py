@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlite3 import IntegrityError
 
 from helper_functions import normalize_and_dedupe
@@ -57,7 +57,7 @@ def add_member(conn,*,first,last,email,phone):
         )
         member_id=cursor.lastrowid
         return member_id,full_name
-    except IntegrityError as e:
+    except IntegrityError:
         return None
 
 def search_book(conn,*,title):
@@ -144,3 +144,54 @@ def add_copy(conn,*,book_id,quantity):
             [(title_id,)] * quantity,
         )
         return title_id,quantity
+def loan_book(conn,*,title_id,member_id,days):
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id FROM titles WHERE id = ?",
+        (title_id,)
+    )
+    book_row = cursor.fetchone()
+    if book_row is None:
+        return {'ok':False,'error':'NO_SUCH_TITLE'}
+
+    cursor.execute(
+        "SELECT id FROM members WHERE id = ? AND is_active=1 LIMIT 1",
+        (member_id,)
+    )
+    member_row=cursor.fetchone()
+    if member_row is None:
+        return {'ok':False,'error':'NO_SUCH_MEMBER'}
+
+    cursor.execute(
+        "SELECT id FROM copies WHERE title_id = ? AND status='available' ORDER BY id LIMIT 1",
+        (book_row[0],)
+    )
+    copy_row = cursor.fetchone()
+    if copy_row is None:
+        return {'ok':False,'error':'NO_COPIES_AVAILABLE'}
+
+    cursor.execute(
+        "UPDATE copies SET status ='on_loan' WHERE id=? AND status='available'",
+        (copy_row[0],)
+    )
+    if cursor.rowcount==0:
+        return {'ok':False,'error':'RACE_LOST'}
+
+    loan_date=datetime.now()
+    due=(loan_date+timedelta(days=days)).strftime("%Y-%m-%d")
+    loaned_at=loan_date.strftime("%Y-%m-%d")
+    try:
+        cursor.execute(
+            "INSERT INTO loans (copy_id, member_id, loaned_at, due_at) VALUES(?,?,?,?)",
+            (copy_row[0],member_id,loaned_at,due)
+        )
+    except IntegrityError:
+        cursor.execute(
+            "UPDATE copies SET status = 'available' WHERE id = ?",
+            (copy_row[0],)
+        )
+        return {'ok':False,'error':'DB_ERROR'}
+    loan_id=cursor.lastrowid
+    results={'ok':True,'data':{'loan_id':loan_id,'title_id': book_row[0],'member_id': member_row[0],'copy_id':copy_row[0],'loaned_at':loaned_at,'due':due}}
+    return results
+
