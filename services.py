@@ -15,7 +15,7 @@ def add_book(conn,*,title,authors,pub_year,isbn):
 
     book_title= cursor.execute(
         "SELECT title FROM titles WHERE id=?",
-        tit_id
+        (tit_id,)
     ).fetchone()[0]
     for order, (display, normalized) in enumerate(pairs, start=1):
         cursor.execute(
@@ -195,3 +195,28 @@ def loan_book(conn,*,title_id,member_id,days):
     results={'ok':True,'data':{'loan_id':loan_id,'title_id': book_row[0],'member_id': member_row[0],'copy_id':copy_row[0],'loaned_at':loaned_at,'due':due}}
     return results
 
+
+def return_book(conn,*,loan_id):
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT copy_id,returned_at FROM loans WHERE id=?",
+        (loan_id,)
+    )
+    row=cursor.fetchone()
+    if row is None:
+        return {'ok':False,'error':'NO_SUCH_LOAN'}
+    copy_id=row[0]
+    returned_at=row[1]
+    if returned_at:
+        return {'ok':False,'error':'ALREADY_RETURNED','returned_at':returned_at}
+    return_date=datetime.now().strftime("%Y-%m-%d")
+    cursor.execute(
+        "UPDATE loans SET returned_at = ? WHERE id=? ",
+        (return_date,loan_id)
+    )
+
+    cursor.execute(
+        "UPDATE copies SET status = 'available' WHERE id=? AND status='on_loan'",
+        (copy_id,)
+    )
+    return {'ok':True,'data':{'copy_id':copy_id,'return_date':return_date}}

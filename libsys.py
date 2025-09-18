@@ -1,6 +1,6 @@
 #import required library's
 from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, email_type, phone_type, quantity_type
-from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book
+from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book, return_book
 import argparse
 
 
@@ -41,6 +41,9 @@ add_parser=subparsers.add_parser("loan", help="loan a book")
 add_parser.add_argument('--id',type=int,required=True,help="The id of the book")
 add_parser.add_argument('--member_id',type=int,required=True,help="The id of the member")
 add_parser.add_argument('-d','--days', type=int,help='length of the loan in days' ,default=14)
+# Add subparser return_book:
+add_parser=subparsers.add_parser("return_book", help="return a book")
+add_parser.add_argument('--loan_id',type=int,required=True,help="The id of the loan")
 
 
 
@@ -99,7 +102,9 @@ elif args.command=="search_book":
 
 elif args.command=="search_member":
     with DatabaseContextManager("library.db") as conn:
-        name=args.name.strip().lower()
+        name = None
+        if args.name:
+            name=args.name.strip().lower()
         results=search_member(conn,email=args.email,name=name,phone=args.phone)
         search_params=[]
         if args.email:
@@ -152,7 +157,22 @@ elif args.command=="loan":
 
         else:
             loan = results['data']
-            print(f"\n Book {loan['title_id']} was loaned to member {loan['member_id']} loan id: {loan["loan_id"]}\n loaned on {loan['loaned_at']} due {loan['due']} ")
+            print(f"\n Book {loan['title_id']} was loaned to member {loan['member_id']} loan id: {loan['loan_id']}\n loaned on {loan['loaned_at']} due {loan['due']} ")
+
+elif args.command=="return_book":
+
+    with DatabaseContextManager("library.db") as conn:
+        results=return_book(conn,loan_id=args.loan_id)
+        if not results['ok']:
+            err=results['error']
+            if err=="NO_SUCH_LOAN":
+                print(f"No book found with the ID:{args.loan_id}")
+            elif err=="ALREADY_RETURNED":
+                print(f"This loan was returned {results['returned_at']}")
+        else:
+            returned=results['data']
+            print (f"The loan {args.loan_id} for the copy {returned['copy_id']} was returned {returned['return_date']}")
+
 
 
 
