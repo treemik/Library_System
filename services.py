@@ -220,3 +220,42 @@ def return_book(conn,*,loan_id):
         (copy_id,)
     )
     return {'ok':True,'data':{'copy_id':copy_id,'return_date':return_date}}
+
+def search_loan(conn,*,member_id,title_id):
+    cursor = conn.cursor()
+    results=[]
+    if member_id is not None:
+        cursor.execute(
+            "SELECT id FROM loans WHERE member_id=? AND returned_at IS NULL",
+            (member_id,)
+        )
+        row=cursor.fetchall()
+        if not row:
+            return {'ok':False,'error':'MEMBER_HAS_NO_LOANS'}
+        for loan, in row:
+            results.append(loan)
+        return {'ok':True,'data':results}
+
+
+    elif title_id is not None:
+        cursor.execute(
+            "SELECT id FROM copies WHERE title_id=? AND status='on_loan'",
+            (title_id,)
+        )
+        copy_row=cursor.fetchall()
+        if not copy_row:
+            return {'ok':False,'error':'TITLE_NOT_ON_LOAN'}
+        for copy_id, in copy_row:
+             cursor.execute(
+                 "SELECT id FROM loans WHERE copy_id=? AND returned_at IS NULL",
+                 (copy_id,)
+             )
+             loan_row=cursor.fetchall()
+
+             for loan, in loan_row:
+                 results.append(loan)
+        if not results:
+            return {'ok': False, 'error': 'NO_COPIES_ON_LOAN'}
+        return {'ok':True,'data':results}
+
+

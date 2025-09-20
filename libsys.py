@@ -1,6 +1,6 @@
 #import required library's
 from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, email_type, phone_type, quantity_type
-from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book, return_book
+from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book, return_book,search_loan
 import argparse
 
 
@@ -44,6 +44,10 @@ add_parser.add_argument('-d','--days', type=int,help='length of the loan in days
 # Add subparser return_book:
 add_parser=subparsers.add_parser("return_book", help="return a book")
 add_parser.add_argument('--loan_id',type=int,required=True,help="The id of the loan")
+# add subparser search_loan
+add_parser=subparsers.add_parser("search_loan", help="search for a loan")
+add_parser.add_argument('-m','--mid',type=int,help="The members id")
+add_parser.add_argument('--tid',type=int,help='the title id')
 
 
 
@@ -172,6 +176,26 @@ elif args.command=="return_book":
         else:
             returned=results['data']
             print (f"The loan {args.loan_id} for the copy {returned['copy_id']} was returned {returned['return_date']}")
+
+elif args.command=='search_loan':
+    with DatabaseContextManager("library.db") as conn:
+        results=search_loan(conn,member_id=args.mid,title_id=args.tid)
+        if not results['ok']:
+            err=results['error']
+            if err=="MEMBER_HAS_NO_LOANS":
+                print(f"No loans found with the ID:{args.mid}")
+            if err=="TITLE_NOT_ON_LOAN":
+                print (f"No copies with the tile id:{args.tid} are on loan")
+            if err=="NO_COPIES_ON_LOAN":
+                print(f"No copies with the tile id:{args.tid} are on loan")
+
+        else:
+            loan = results['data']
+            for loan_id in loan:
+                print (f"the loan ids for the search are {loan_id}")
+
+
+
 
 
 
