@@ -258,4 +258,28 @@ def search_loan(conn,*,member_id,title_id):
             return {'ok': False, 'error': 'NO_COPIES_ON_LOAN'}
         return {'ok':True,'data':results}
 
+def check_overdue_loans(conn):
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id,copy_id,member_id,loaned_at, due_at FROM loans WHERE returned_at IS NULL",
+    )
+    row=cursor.fetchall()
+    if not row:
+        return {'ok':False,'error':'NO_ACTIVE_LOANS'}
+    results=[]
+    for loan_id,copy_id,member_id,loaned_at,due_at in row:
+        today=datetime.now()
+        due=datetime.strptime(due_at,"%Y-%m-%d")
+        if today > due:
+            results.append({'loan_id':loan_id,'copy_id':copy_id,'member_id':member_id,'loaned_at':loaned_at,'due_at':due_at})
+    return {'ok':True,'data':results}
+
+
+
+
+
+
+
+
+
 

@@ -1,6 +1,6 @@
 #import required library's
 from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, email_type, phone_type, quantity_type
-from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book, return_book,search_loan
+from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book, return_book,search_loan, check_overdue_loans
 import argparse
 
 
@@ -48,6 +48,8 @@ add_parser.add_argument('--loan_id',type=int,required=True,help="The id of the l
 add_parser=subparsers.add_parser("search_loan", help="search for a loan")
 add_parser.add_argument('-m','--mid',type=int,help="The members id")
 add_parser.add_argument('--tid',type=int,help='the title id')
+# Add subparser overdue
+add_parser=subparsers.add_parser("overdue", help="cheak overdue loans")
 
 
 
@@ -193,6 +195,32 @@ elif args.command=='search_loan':
             loan = results['data']
             for loan_id in loan:
                 print (f"the loan ids for the search are {loan_id}")
+
+elif args.command=="overdue":
+    with DatabaseContextManager("library.db") as conn:
+        results=check_overdue_loans(conn)
+        if not results['ok']:
+            err=results['error']
+            if err=="NO_ACTIVE_LOANS":
+                print("\nThere are no active loans")
+        else:
+            overdue=results['data']
+            if not overdue:
+                print("\nThere are no overdue loans\n")
+            else:
+                print("\n")
+                print("-" * 60)
+                print("Currently overdue loans")
+                print("-" * 60)
+                print(f"\n{'loan_id':<7} | {'copy_id':<7} | {'member_id':<9} | {'loaned_at':<10} | {'due_at':<10}")
+                for loan in overdue:
+                    loan_id = loan['loan_id']
+                    copy_id = loan['copy_id']
+                    member_id = loan['member_id']
+                    loaned_at = loan['loaned_at']
+                    due_at = loan['due_at']
+                    print (f"{loan_id:<7} | {copy_id:<7} | {member_id:<9} | {loaned_at:<10} | {due_at:<10}")
+                print("\n")
 
 
 
