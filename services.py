@@ -274,6 +274,20 @@ def check_overdue_loans(conn):
             results.append({'loan_id':loan_id,'copy_id':copy_id,'member_id':member_id,'loaned_at':loaned_at,'due_at':due_at})
     return {'ok':True,'data':results}
 
+def lost_or_withdrawn(conn,*,copy_id,status):
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE copies SET status = ? WHERE id=?",
+        (status,copy_id)
+    )
+
+    if cursor.rowcount == 0:
+        return {'ok':False,'error':'NO_SUCH_COPY'}
+    else:
+        return {'ok':True}
+
+
+
 
 
 

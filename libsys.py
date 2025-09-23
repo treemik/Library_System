@@ -1,6 +1,6 @@
 #import required library's
 from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, email_type, phone_type, quantity_type
-from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book, return_book,search_loan, check_overdue_loans
+from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book, return_book,search_loan, check_overdue_loans,lost_or_withdrawn
 import argparse
 
 
@@ -50,6 +50,10 @@ add_parser.add_argument('-m','--mid',type=int,help="The members id")
 add_parser.add_argument('--tid',type=int,help='the title id')
 # Add subparser overdue
 add_parser=subparsers.add_parser("overdue", help="cheak overdue loans")
+#Add subparser status_update
+add_parser=subparsers.add_parser("status_update", help="update the status of a book")
+add_parser.add_argument('--id',type=int,required=True,help="The id of the book")
+add_parser.add_argument('--status',type=str.lower,choices=["lost","withdrawn"],help="The status of the book",required=True)
 
 
 
@@ -221,6 +225,18 @@ elif args.command=="overdue":
                     due_at = loan['due_at']
                     print (f"{loan_id:<7} | {copy_id:<7} | {member_id:<9} | {loaned_at:<10} | {due_at:<10}")
                 print("\n")
+
+elif args.command=="status_update":
+    with DatabaseContextManager("library.db") as conn:
+        results=lost_or_withdrawn(conn,copy_id=args.id,status=args.status)
+        if not results['ok']:
+            err=results['error']
+            if err=="NO_SUCH_COPY":
+                print(f"there are no copies with the id {args.id}")
+
+
+        else:
+            print(f"the copy with the id: {args.id} status updated to {args.status}")
 
 
 
