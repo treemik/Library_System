@@ -286,6 +286,16 @@ def lost_or_withdrawn(conn,*,copy_id,status):
     else:
         return {'ok':True}
 
+def change_member_status(conn,*,member_id,status):
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE members SET is_active =? WHERE id=?",
+        (status,member_id)
+    )
+    if cursor.rowcount == 0:
+        return {'ok':False,'error':'NO_SUCH_MEMBER'}
+    else:
+        return {'ok':True}
 
 
 
