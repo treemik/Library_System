@@ -42,7 +42,7 @@ def add_author(conn,*,first,last):
     )
     row = cursor.execute(
         "SELECT id, full_name FROM authors WHERE normalized_name=?",
-        normalized
+        (normalized,)
     ).fetchone()
 
     return row
