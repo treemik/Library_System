@@ -298,7 +298,27 @@ def change_member_status(conn,*,member_id,status):
         return {'ok':True}
 
 
-
+def renew (conn,*,copy_id):
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE loans SET renewals_count = renewals_count + 1 WHERE copy_id=? AND returned_at IS NULL",
+        (copy_id,)
+    )
+    if cursor.rowcount == 0:
+        return {'ok':False,'error':'NO_ACTIVE_LOAN_FOR_COPY'}
+    cursor.execute(
+        "SELECT due_at FROM loans WHERE copy_id=? AND returned_at IS NULL ",
+        (copy_id,)
+    )
+    row=cursor.fetchone()
+    date=datetime.strptime(row[0],"%Y-%m-%d")
+    new_due=date+timedelta(days=14)
+    date_string = new_due.strftime("%Y-%m-%d")
+    cursor.execute(
+        "UPDATE loans SET due_at = ? WHERE copy_id=? AND returned_at IS NULL",
+        (date_string,copy_id)
+    )
+    return {'ok':True,'due_at':date_string}
 
 
 

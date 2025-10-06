@@ -1,8 +1,7 @@
-#import required library's
-from threading import activeCount
+
 
 from helper_functions import init_db, DatabaseContextManager, published_type, isbn_type, email_type, phone_type, quantity_type
-from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book, return_book,search_loan, check_overdue_loans,lost_or_withdrawn, change_member_status
+from services import add_book, add_author, add_member, search_book, search_member, add_copy, loan_book, return_book,search_loan, check_overdue_loans,lost_or_withdrawn, change_member_status,renew
 import argparse
 
 
@@ -59,7 +58,11 @@ add_parser.add_argument('--status',type=str.lower,choices=["lost","withdrawn"],h
 #Add parser member_status
 add_parser=subparsers.add_parser("member_status",help="change members status")
 add_parser.add_argument('--id',type=int,required=True,help="The id of the member")
-add_parser.add_argument('--status',type=int,choices=[1,0],required=True,help="The status of the member must be 1 active or 0 inactive")
+add_parser.add_argument('--status',type=int,choices=[1,0],required=True,help="The status of the member must be 1 active or 0 inactive")\
+#add subparser renew
+add_parser=subparsers.add_parser("renew",help="renew the status of a book")
+add_parser.add_argument('--id',type=int,required=True,help="The id of the book")
+
 
 
 args = parser.parse_args()
@@ -257,6 +260,16 @@ elif args.command=="member_status":
                 print(f"there are no members with the id {args.id}")
         else:
             print(f"The member with the id: {args.id} status updated to {status}")
+
+elif args.command=="renew":
+    with DatabaseContextManager("library.db") as conn:
+        results=renew(conn,copy_id=args.id)
+        if not results['ok']:
+            err=results['error']
+            if err=="NO_ACTIVE_LOAN_FOR_COPY":
+                print(f"there are no copies with the id {args.id}")
+        else:
+            print(f"the copy with the id: {args.id} renewed")
 
 
 
